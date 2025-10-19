@@ -4,7 +4,45 @@
 
 ### 🐛 Bug 修复
 
-#### 1. Ant Design CDN 地址错误（关键修复）
+#### 1. Monaco Editor Web Worker 配置错误
+
+**问题**：
+```
+Uncaught Error: You must define a function MonacoEnvironment.getWorkerUrl or MonacoEnvironment.getWorker
+```
+
+**原因**：
+Monaco Editor 需要正确配置 Web Workers 才能启用语法高亮、代码补全等功能。
+
+**解决方案**：
+```typescript
+// src/components/Editor.tsx
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+// ... 其他 workers
+
+self.MonacoEnvironment = {
+  getWorker(_: unknown, label: string) {
+    if (label === 'typescript' || label === 'javascript') {
+      return new tsWorker()
+    }
+    return new editorWorker()
+  }
+}
+```
+
+**改进**：
+- ✅ 使用 Vite 的 `?worker` 语法自动处理 Worker
+- ✅ 支持 TypeScript、JavaScript、JSON、CSS、HTML 等语言
+- ✅ 代码智能提示和语法检查正常工作
+
+**相关文件**：
+- `src/components/Editor.tsx` - Worker 配置
+- `vite.config.ts` - Vite Worker 构建配置
+
+---
+
+#### 2. Ant Design CDN 地址更新
 
 **问题**：
 ```

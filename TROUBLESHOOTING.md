@@ -278,6 +278,32 @@ console.log(navigator.userAgent)
 
 ---
 
+### 11. Monaco Editor Worker 错误 ✅ 已修复
+
+**问题描述：**
+```
+Uncaught Error: You must define a function MonacoEnvironment.getWorkerUrl or MonacoEnvironment.getWorker
+```
+
+**原因：**
+Monaco Editor 需要配置 Web Workers 来提供语法高亮、代码补全等功能。
+
+**解决方案（v2.0.1）：**
+已在 `src/components/Editor.tsx` 中正确配置 Monaco Environment。
+
+**如果仍然遇到此问题：**
+1. 清除浏览器缓存
+2. 硬刷新页面（Ctrl+Shift+R）
+3. 确保 `monaco-editor` 包已正确安装
+
+**验证修复：**
+- ✅ 编辑器应该有语法高亮
+- ✅ TypeScript 代码应该有智能提示
+- ✅ 输入时应该有自动补全
+- ✅ 控制台没有 Worker 相关错误
+
+---
+
 ## 调试技巧
 
 ### 1. 使用浏览器控制台

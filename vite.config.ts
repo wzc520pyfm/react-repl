@@ -20,6 +20,11 @@ export default defineConfig({
   build: {
     rollupOptions: {
       external: ['typescript'],
+      output: {
+        manualChunks: {
+          monaco: ['monaco-editor'],
+        },
+      },
     },
   },
   server: {
@@ -33,5 +38,8 @@ export default defineConfig({
   ],
   optimizeDeps: {
     include: ['monaco-editor'],
+  },
+  worker: {
+    format: 'es',
   },
 })
