@@ -34,6 +34,105 @@ interface EditorProps {
   theme?: 'vs' | 'vs-dark'
 }
 
+// 配置 Monaco 的 TypeScript 设置（只需执行一次）
+let monacoConfigured = false
+
+const configureMonaco = () => {
+  if (monacoConfigured) return
+  monacoConfigured = true
+
+  // 配置 TypeScript 编译选项
+  monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      target: monaco.languages.typescript.ScriptTarget.ES2020,
+      allowNonTsExtensions: true,
+      moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
+      module: monaco.languages.typescript.ModuleKind.ESNext,
+      noEmit: true,
+      esModuleInterop: true,
+      jsx: monaco.languages.typescript.JsxEmit.React,
+      reactNamespace: 'React',
+      allowJs: true,
+      typeRoots: ['node_modules/@types']
+    })
+
+    // 添加 React 全局类型定义
+    const reactTypes = `
+      declare const React: typeof import('react');
+      declare const useState: typeof import('react').useState;
+      declare const useEffect: typeof import('react').useEffect;
+      declare const useCallback: typeof import('react').useCallback;
+      declare const useMemo: typeof import('react').useMemo;
+      declare const useRef: typeof import('react').useRef;
+    `
+
+    // 添加 Antd 全局类型定义
+    const antdTypes = `
+      declare const antd: typeof import('antd');
+      declare const Button: typeof import('antd').Button;
+      declare const Input: typeof import('antd').Input;
+      declare const Space: typeof import('antd').Space;
+      declare const Typography: typeof import('antd').Typography;
+      declare const Form: typeof import('antd').Form;
+      declare const Select: typeof import('antd').Select;
+      declare const Table: typeof import('antd').Table;
+      declare const Modal: typeof import('antd').Modal;
+      declare const message: typeof import('antd').message;
+      declare const Card: typeof import('antd').Card;
+      declare const Row: typeof import('antd').Row;
+      declare const Col: typeof import('antd').Col;
+      declare const Divider: typeof import('antd').Divider;
+      declare const Tag: typeof import('antd').Tag;
+      declare const Alert: typeof import('antd').Alert;
+      declare const Tabs: typeof import('antd').Tabs;
+      declare const Drawer: typeof import('antd').Drawer;
+      declare const Dropdown: typeof import('antd').Dropdown;
+      declare const Menu: typeof import('antd').Menu;
+      declare const Checkbox: typeof import('antd').Checkbox;
+      declare const Radio: typeof import('antd').Radio;
+      declare const Switch: typeof import('antd').Switch;
+      declare const DatePicker: typeof import('antd').DatePicker;
+      declare const Upload: typeof import('antd').Upload;
+      declare const Progress: typeof import('antd').Progress;
+    `
+
+    // 添加 Icons 全局类型定义
+    const iconsTypes = `
+      declare const icons: typeof import('@ant-design/icons');
+      declare const SmileOutlined: typeof import('@ant-design/icons').SmileOutlined;
+      declare const HeartOutlined: typeof import('@ant-design/icons').HeartOutlined;
+      declare const StarOutlined: typeof import('@ant-design/icons').StarOutlined;
+      declare const HomeOutlined: typeof import('@ant-design/icons').HomeOutlined;
+      declare const UserOutlined: typeof import('@ant-design/icons').UserOutlined;
+      declare const SettingOutlined: typeof import('@ant-design/icons').SettingOutlined;
+      declare const PlusOutlined: typeof import('@ant-design/icons').PlusOutlined;
+      declare const DeleteOutlined: typeof import('@ant-design/icons').DeleteOutlined;
+      declare const EditOutlined: typeof import('@ant-design/icons').EditOutlined;
+    `
+
+    // 添加额外的库类型（如果用户添加了）
+    const extraLibTypes = `
+      declare const dayjs: any;
+      declare const _: any;
+      declare const axios: any;
+    `
+
+    // 将类型定义添加到 Monaco
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+      reactTypes + antdTypes + iconsTypes + extraLibTypes,
+      'ts:globals.d.ts'
+    )
+
+  // 禁用一些不必要的诊断
+  monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+    noSemanticValidation: false,
+    noSyntaxValidation: false,
+    diagnosticCodesToIgnore: [
+      1375, // 'await' expressions are only allowed at the top level of a file
+      1378, // Top-level 'await' expressions are only allowed when the 'module' option is set
+    ]
+  })
+}
+
 const Editor: React.FC<EditorProps> = ({ 
   value, 
   onChange, 
@@ -45,6 +144,9 @@ const Editor: React.FC<EditorProps> = ({
 
   useEffect(() => {
     if (!editorRef.current) return
+
+    // 配置 Monaco（只执行一次）
+    configureMonaco()
 
     // 创建编辑器实例
     monacoInstanceRef.current = monaco.editor.create(editorRef.current, {

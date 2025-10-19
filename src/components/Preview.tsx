@@ -10,7 +10,7 @@ interface PreviewProps {
   importMap: ImportMap
 }
 
-const Preview: React.FC<PreviewProps> = ({ code, reactVersion, antdVersion, importMap }) => {
+const Preview: React.FC<PreviewProps> = ({ code, importMap }) => {
   const [error, setError] = useState<string | null>(null)
   const [html, setHtml] = useState('')
 
@@ -44,9 +44,8 @@ function generatePreviewHTML(code: string, importMap: ImportMap): string {
   const antdUrl = importMap['antd'] || ''
   const iconsUrl = importMap['@ant-design/icons'] || ''
   
-  // 提取 antd 版本用于样式
-  const antdVersion = antdUrl.match(/@([\d.]+)\//)?.[1] || '5.27.5'
-  const antdCssUrl = antdUrl.replace('/dist/antd.min.js', '/dist/reset.min.css')
+  // antd 5.x 使用 reset.css
+  const antdCssUrl = antdUrl.replace(/\/dist\/antd.*\.js$/, '/dist/reset.min.css')
   
   // 加载其他自定义包
   const customPackages = Object.entries(importMap)

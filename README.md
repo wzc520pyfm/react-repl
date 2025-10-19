@@ -2,6 +2,17 @@
 
 一个轻量级的 Ant Design 在线 Playground，灵感来自 [Element Plus Playground](https://github.com/element-plus/element-plus-playground)。
 
+## ⚠️ 重要提示
+
+**不要使用 `import` 语句！** 所有依赖都作为全局变量提供。
+
+```jsx
+❌ 错误：import { useState } from 'react'
+✅ 正确：const [count, setCount] = useState(0)  // 直接使用
+```
+
+详见：[编辑器使用指南](./EDITOR_GUIDE.md)
+
 ## 特性
 
 - 🎨 **实时预览**：编写 React 代码并即时查看结果

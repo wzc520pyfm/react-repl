@@ -26,27 +26,54 @@ pnpm dev
 
 ## 使用说明
 
+### 0. 重要提示：不要使用 import 语句！⚠️
+
+**不能使用 import：**
+```jsx
+❌ 错误：import { useState } from 'react'
+❌ 错误：import { Button } from 'antd'
+```
+
+**为什么？** 这是浏览器内运行的 Playground，所有依赖都作为**全局变量**提供。
+
+**正确做法：** 直接使用全局变量
+```jsx
+✅ 正确：const [count, setCount] = useState(0)
+✅ 正确：return <Button>Click</Button>
+```
+
+详细说明请查看 [EDITOR_GUIDE.md](./EDITOR_GUIDE.md)
+
+---
+
 ### 1. 编写代码
 
-在左侧编辑器中编写 React 代码。已预先导入的内容：
+在左侧编辑器中编写 React 代码。已预先导入的内容（作为全局变量）：
 
-#### React Hooks
+#### React Hooks（全局可用）
 ```javascript
-const { useState, useEffect, useCallback, useMemo } = React;
+// 这些 Hooks 已经作为全局变量，可以直接使用
+useState, useEffect, useCallback, useMemo, useRef
 ```
 
-#### Antd 组件
+#### Antd 组件（全局可用）
 ```javascript
-const { 
-  Button, Input, Space, Typography, 
-  Form, Select, Table, Modal, message,
-  Card, Row, Col, Divider, Tag, Alert
-} = antd;
+// 这些组件已经作为全局变量，可以直接使用
+Button, Input, Space, Typography, Form, Select, 
+Table, Modal, message, Card, Row, Col, Divider, 
+Tag, Alert, Tabs, Drawer, Dropdown, Menu, Checkbox,
+Radio, Switch, DatePicker, Upload, Progress
 ```
 
-#### Icons
+#### Icons（全局可用）
 ```javascript
-const { SmileOutlined, HeartOutlined, StarOutlined } = icons;
+// 这些图标已经作为全局变量，可以直接使用
+SmileOutlined, HeartOutlined, StarOutlined,
+HomeOutlined, UserOutlined, SettingOutlined,
+PlusOutlined, DeleteOutlined, EditOutlined
+
+// 其他图标从 icons 对象获取
+const { CheckOutlined, CloseOutlined } = icons
 ```
 
 ### 2. 示例代码

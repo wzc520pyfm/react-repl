@@ -4,9 +4,34 @@
 
 ### 🐛 Bug 修复
 
-#### 1. Monaco Editor Web Worker 配置错误
+#### 1. Monaco Editor 全局类型定义和 Worker 配置
 
-**问题**：
+**问题 1**：编辑器中提示变量未定义
+```
+Cannot find name 'useState'
+Cannot find name 'Button'
+```
+
+**原因**：
+Monaco Editor 的 TypeScript 语言服务不知道这些全局变量的存在。虽然在运行时这些变量通过 `const { useState } = React` 解构提供，但编辑器需要类型定义。
+
+**解决方案**：
+```typescript
+// 为 Monaco 添加全局类型定义
+const reactTypes = `
+  declare const React: typeof import('react');
+  declare const useState: typeof import('react').useState;
+  declare const Button: typeof import('antd').Button;
+  // ... 其他全局变量
+`
+
+monaco.languages.typescript.typescriptDefaults.addExtraLib(
+  reactTypes + antdTypes + iconsTypes,
+  'ts:globals.d.ts'
+)
+```
+
+**问题 2**：Worker 配置错误
 ```
 Uncaught Error: You must define a function MonacoEnvironment.getWorkerUrl or MonacoEnvironment.getWorker
 ```
@@ -34,11 +59,19 @@ self.MonacoEnvironment = {
 **改进**：
 - ✅ 使用 Vite 的 `?worker` 语法自动处理 Worker
 - ✅ 支持 TypeScript、JavaScript、JSON、CSS、HTML 等语言
+- ✅ 添加完整的全局类型定义（React Hooks、Antd 组件、Icons）
 - ✅ 代码智能提示和语法检查正常工作
+- ✅ **编辑器中不再显示"变量未定义"错误**
+- ✅ 支持所有 Antd 组件的类型提示
 
 **相关文件**：
-- `src/components/Editor.tsx` - Worker 配置
+- `src/components/Editor.tsx` - Worker 配置和全局类型定义
 - `vite.config.ts` - Vite Worker 构建配置
+
+**用户体验改进**：
+- 现在可以直接使用 `useState`、`Button` 等，编辑器不会报错
+- 输入时有完整的类型提示和自动补全
+- JSX 语法完全支持，无红色波浪线
 
 ---
 
