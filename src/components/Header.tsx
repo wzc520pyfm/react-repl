@@ -184,7 +184,7 @@ const Header: React.FC<HeaderProps> = ({ onRefresh, dark, onThemeChange }) => {
             type="text"
             icon={<GithubOutlined />}
             title="View on GitHub"
-            href="https://github.com/element-plus/element-plus-playground"
+            href="https://github.com/wzc520pyfm/react-repl"
             target="_blank"
           />
 
