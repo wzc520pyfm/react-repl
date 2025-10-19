@@ -1,17 +1,46 @@
-<p align="center">
-  <img width="300px" src="https://user-images.githubusercontent.com/10731096/95823103-9ce15780-0d5f-11eb-8010-1bd1b5910d4f.png">
-</p>
+# Antd Playground
 
-# Element Plus Playground
+A modern online playground for Ant Design (Antd) and React, allowing you to experiment with Antd components in real-time.
 
-[![GitHub Pages](https://github.com/element-plus/element-plus-playground/actions/workflows/gh-pages.yml/badge.svg)](https://github.com/element-plus/element-plus-playground/actions/workflows/gh-pages.yml)
+## Features
 
-You can go to [element-plus.run](https://element-plus.run/) to have a try! 😆
+- 🎨 **Real-time Preview**: Write React code and see results instantly
+- 📦 **Version Control**: Switch between different versions of React, Antd, and TypeScript
+- 💾 **Auto-save**: Your code is automatically saved in the URL
+- 🌓 **Dark Mode**: Toggle between light and dark themes
+- 🔗 **Share**: Share your code via URL
+- ⚙️ **CDN Options**: Choose from multiple CDN providers (jsDelivr, unpkg)
+
+## Technology Stack
+
+- **React 18.x**: Modern React with hooks
+- **Ant Design 5.x**: Enterprise-level UI design language
+- **Sandpack**: CodeSandbox's online code editor
+- **Vite**: Next generation frontend tooling
+- **TypeScript**: Type-safe development
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development server
+pnpm dev
+
+# Build for production
+pnpm build
+
+# Preview production build
+pnpm preview
+```
 
 ## Credits
 
-- [vuejs/repl](https://github.com/vuejs/repl)
+- [CodeSandbox Sandpack](https://sandpack.codesandbox.io/) - The online code editor
+- [Ant Design](https://ant.design/) - Enterprise-level UI design language
+- Original project structure inspired by [element-plus-playground](https://github.com/element-plus/element-plus-playground)
 
 ## License
 
-[MIT](./LICENSE) License © 2021-PRESENT [三咲智子](https://github.com/sxzz)
+[MIT](./LICENSE) License © 2025

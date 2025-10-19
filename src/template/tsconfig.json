@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "jsx": "preserve",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "types": ["element-plus/global.d.ts"],
-    "allowImportingTsExtensions": true,
-    "allowJs": true,
-    "checkJs": true
-  },
-  "vueCompilerOptions": {
-    "target": 3.3
+    "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "esModuleInterop": true
   }
 }

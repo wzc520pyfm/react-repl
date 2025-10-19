@@ -1,8 +1,10 @@
 import { gte } from 'semver'
-import type { Versions } from '@/composables/store'
-import type { ImportMap } from '@vue/repl'
-import type { MaybeRef } from '@vueuse/core'
-import type { Ref } from 'vue'
+
+export interface Versions {
+  react: string
+  antd: string
+  typescript: string
+}
 
 export interface Dependency {
   pkg?: string
@@ -11,7 +13,35 @@ export interface Dependency {
 }
 
 export type Cdn = 'unpkg' | 'jsdelivr' | 'jsdelivr-fastly'
-export const cdn = useLocalStorage<Cdn>('setting-cdn', 'jsdelivr')
+
+// Use localStorage if available (client-side), otherwise default value
+const getStoredCdn = (): Cdn => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const stored = localStorage.getItem('setting-cdn')
+    if (stored === 'unpkg' || stored === 'jsdelivr' || stored === 'jsdelivr-fastly') {
+      return stored
+    }
+  }
+  return 'jsdelivr'
+}
+
+const setStoredCdn = (value: Cdn) => {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.setItem('setting-cdn', value)
+  }
+}
+
+let cdnValue = getStoredCdn()
+
+export const cdn = {
+  get value() {
+    return cdnValue
+  },
+  set value(newValue: Cdn) {
+    cdnValue = newValue
+    setStoredCdn(newValue)
+  }
+}
 
 export const genCdnLink = (
   pkg: string,
@@ -29,88 +59,42 @@ export const genCdnLink = (
   }
 }
 
-export const genCompilerSfcLink = (version: string) => {
-  return genCdnLink(
-    '@vue/compiler-sfc',
-    version,
-    '/dist/compiler-sfc.esm-browser.js',
-  )
-}
-
 export const genImportMap = (
-  { vue, elementPlus }: Partial<Versions> = {},
-  nightly: boolean,
-): ImportMap => {
-  const deps: Record<string, Dependency> = {
-    vue: {
-      pkg: '@vue/runtime-dom',
-      version: vue,
-      path: '/dist/runtime-dom.esm-browser.js',
-    },
-    '@vue/shared': {
-      version: vue,
-      path: '/dist/shared.esm-bundler.js',
-    },
-    'element-plus': {
-      pkg: nightly ? '@element-plus/nightly' : 'element-plus',
-      version: elementPlus,
-      path: '/dist/index.full.min.mjs',
-    },
-    'element-plus/': {
-      pkg: 'element-plus',
-      version: elementPlus,
-      path: '/',
-    },
-    '@element-plus/icons-vue': {
-      version: '2',
-      path: '/dist/index.min.js',
-    },
-  }
-
+  { react, antd }: Partial<Versions> = {},
+): Record<string, string> => {
   return {
-    imports: Object.fromEntries(
-      Object.entries(deps).map(([key, dep]) => [
-        key,
-        genCdnLink(dep.pkg ?? key, dep.version, dep.path),
-      ]),
-    ),
+    'react': genCdnLink('react', react, '/umd/react.production.min.js'),
+    'react-dom': genCdnLink('react-dom', react, '/umd/react-dom.production.min.js'),
+    'antd': genCdnLink('antd', antd, '/dist/antd.min.js'),
+    '@ant-design/icons': genCdnLink('@ant-design/icons', 'latest', '/dist/index.umd.js'),
   }
 }
 
-export const getVersions = (pkg: MaybeRef<string>) => {
-  const url = computed(
-    () => `https://data.jsdelivr.com/v1/package/npm/${unref(pkg)}`,
-  )
-  return useFetch(url, {
-    initialData: [],
-    afterFetch: (ctx) => ((ctx.data = ctx.data.versions), ctx),
-    refetch: true,
-  }).json<string[]>().data as Ref<string[]>
+export const getVersions = async (pkg: string): Promise<string[]> => {
+  try {
+    const url = `https://data.jsdelivr.com/v1/package/npm/${pkg}`
+    const response = await fetch(url)
+    const data = await response.json()
+    return data.versions || []
+  } catch (error) {
+    console.error(`Failed to fetch versions for ${pkg}:`, error)
+    return []
+  }
 }
 
-export const getSupportedVueVersions = () => {
-  const versions = getVersions('vue')
-  return computed(() =>
-    versions.value.filter((version) => gte(version, '3.2.0')),
-  )
+export const getSupportedReactVersions = async (): Promise<string[]> => {
+  const versions = await getVersions('react')
+  return versions.filter((version) => gte(version, '18.0.0'))
 }
 
-export const getSupportedTSVersions = () => {
-  const versions = getVersions('typescript')
-  return computed(() =>
-    versions.value.filter(
-      (version) => !version.includes('dev') && !version.includes('insiders'),
-    ),
+export const getSupportedTSVersions = async (): Promise<string[]> => {
+  const versions = await getVersions('typescript')
+  return versions.filter(
+    (version) => !version.includes('dev') && !version.includes('insiders'),
   )
 }
 
-export const getSupportedEpVersions = (nightly: MaybeRef<boolean>) => {
-  const pkg = computed(() =>
-    unref(nightly) ? '@element-plus/nightly' : 'element-plus',
-  )
-  const versions = getVersions(pkg)
-  return computed(() => {
-    if (unref(nightly)) return versions.value
-    return versions.value.filter((version) => gte(version, '1.1.0-beta.18'))
-  })
+export const getSupportedAntdVersions = async (): Promise<string[]> => {
+  const versions = await getVersions('antd')
+  return versions.filter((version) => gte(version, '5.0.0'))
 }
