@@ -7,24 +7,25 @@ import {
   SunOutlined, 
   MoonOutlined, 
   GithubOutlined,
-  SettingOutlined 
+  SettingOutlined,
+  CodeOutlined
 } from '@ant-design/icons'
 import { useStore, type VersionKey } from '@/composables/store.tsx'
 import { getSupportedReactVersions, getSupportedAntdVersions, getSupportedTSVersions } from '@/utils/dependency'
 import Settings from './Settings.tsx'
+import ImportMapEditor from './ImportMapEditor.tsx'
 import './Header.css'
 
 interface HeaderProps {
   onRefresh: () => void
+  dark: boolean
+  onThemeChange: (dark: boolean) => void
 }
 
-const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
+const Header: React.FC<HeaderProps> = ({ onRefresh, dark, onThemeChange }) => {
   const store = useStore()
   const [showReset, setShowReset] = useState(false)
-  const [dark, setDark] = useState(() => {
-    const theme = new URLSearchParams(window.location.search).get('theme')
-    return theme === 'dark'
-  })
+  const [showImportMapEditor, setShowImportMapEditor] = useState(false)
 
   const [reactVersions, setReactVersions] = useState<string[]>([])
   const [antdVersions, setAntdVersions] = useState<string[]>([])
@@ -71,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
   }
 
   const toggleTheme = () => {
-    setDark(!dark)
+    onThemeChange(!dark)
   }
 
   const resetPopoverContent = (
@@ -86,6 +87,10 @@ const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
   const settingsPopoverContent = <Settings />
 
   const appVersion = import.meta.env.APP_VERSION
+
+  const handleImportMapSave = (newImportMap: any) => {
+    store.setImportMap(newImportMap)
+  }
 
   return (
     <nav className="header">
@@ -183,6 +188,13 @@ const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
             target="_blank"
           />
 
+          <Button
+            type="text"
+            icon={<CodeOutlined />}
+            title="Import Map"
+            onClick={() => setShowImportMapEditor(true)}
+          />
+
           <Popover
             content={settingsPopoverContent}
             trigger="click"
@@ -196,6 +208,13 @@ const Header: React.FC<HeaderProps> = ({ onRefresh }) => {
           </Popover>
         </Space>
       </div>
+
+      <ImportMapEditor
+        visible={showImportMapEditor}
+        importMap={store.importMap}
+        onClose={() => setShowImportMapEditor(false)}
+        onSave={handleImportMapSave}
+      />
     </nav>
   )
 }

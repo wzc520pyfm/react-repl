@@ -1,21 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { atou, utoa } from '@/utils/encode'
-import { genImportMap, type Versions } from '@/utils/dependency'
-import antdCode from '../template/antd.ts?raw'
-import appCode from '../template/App.tsx?raw'
-import indexCode from '../template/index.tsx?raw'
-import packageJsonCode from '../template/package.json?raw'
+import { genCdnLink, type Versions } from '@/utils/dependency'
+import defaultCode from '../template/App.tsx?raw'
 
 export type VersionKey = 'react' | 'antd' | 'typescript'
+
+export interface ImportMap {
+  [key: string]: string
+}
 
 export interface UserOptions {
   reactVersion?: string
   antdVersion?: string
   tsVersion?: string
+  importMap?: ImportMap
 }
 
 export interface SerializeState {
-  files: Record<string, string>
+  code: string
   _o?: UserOptions
 }
 
@@ -26,6 +28,8 @@ export interface StoreContextType {
   updateFile: (filename: string, content: string) => void
   versions: Versions
   setVersion: (key: VersionKey, version: string) => void
+  importMap: ImportMap
+  setImportMap: (importMap: ImportMap) => void
   serialize: () => string
   resetFiles: () => void
 }
@@ -33,9 +37,6 @@ export interface StoreContextType {
 const StoreContext = createContext<StoreContextType | null>(null)
 
 const APP_FILE = '/App.tsx'
-const INDEX_FILE = '/index.tsx'
-const ANTD_FILE = '/antd.ts'
-const PACKAGE_JSON_FILE = '/package.json'
 
 export const useStore = () => {
   const context = useContext(StoreContext)
@@ -61,12 +62,28 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({
 
   const [versions, setVersions] = useState<Versions>({
     react: saved?._o?.reactVersion ?? '18.3.1',
-    antd: saved?._o?.antdVersion ?? 'latest',
-    typescript: saved?._o?.tsVersion ?? 'latest',
+    antd: saved?._o?.antdVersion ?? '5.27.5',
+    typescript: saved?._o?.tsVersion ?? '5.8.3',
   })
 
-  const [files, setFiles] = useState<Record<string, string>>(() => initFiles(saved, versions))
-  const [activeFile, setActiveFile] = useState<string>(APP_FILE)
+  const getDefaultImportMap = (vers: Versions): ImportMap => ({
+    'react': genCdnLink('react', vers.react, '/umd/react.production.min.js'),
+    'react-dom': genCdnLink('react-dom', vers.react, '/umd/react-dom.production.min.js'),
+    'antd': genCdnLink('antd', vers.antd, '/dist/antd.min.js'),
+    '@ant-design/icons': genCdnLink('@ant-design/icons', '5.5.1', '/dist/index.umd.min.js'),
+  })
+
+  const [importMap, setImportMapState] = useState<ImportMap>(() => {
+    return saved?._o?.importMap || getDefaultImportMap(versions)
+  })
+
+  const [files, setFiles] = useState<Record<string, string>>(() => {
+    return {
+      [APP_FILE]: saved?.code || defaultCode
+    }
+  })
+  
+  const [activeFile] = useState<string>(APP_FILE)
 
   useEffect(() => {
     if (!initialized) {
@@ -80,35 +97,47 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({
   }, [])
 
   const setVersion = useCallback((key: VersionKey, version: string) => {
-    setVersions(prev => ({ ...prev, [key]: version }))
-    if (key === 'antd') {
-      const newAntdCode = generateAntdCode(version)
-      updateFile(ANTD_FILE, newAntdCode)
-    }
-  }, [updateFile])
+    setVersions(prev => {
+      const newVersions = { ...prev, [key]: version }
+      // 当 React 或 Antd 版本变化时，更新 import map
+      if (key === 'react' || key === 'antd') {
+        setImportMapState(prevMap => ({
+          ...prevMap,
+          ...(key === 'react' ? {
+            'react': genCdnLink('react', version, '/umd/react.production.min.js'),
+            'react-dom': genCdnLink('react-dom', version, '/umd/react-dom.production.min.js'),
+          } : {}),
+          ...(key === 'antd' ? {
+            'antd': genCdnLink('antd', version, '/dist/antd.min.js'),
+          } : {}),
+        }))
+      }
+      return newVersions
+    })
+  }, [])
+
+  const setImportMap = useCallback((newImportMap: ImportMap) => {
+    setImportMapState(newImportMap)
+  }, [])
 
   const serialize = useCallback(() => {
     const state: SerializeState = {
-      files,
+      code: files[APP_FILE],
       _o: {
         reactVersion: versions.react,
         antdVersion: versions.antd,
         tsVersion: versions.typescript,
+        importMap: importMap,
       }
     }
     return utoa(JSON.stringify(state))
-  }, [files, versions])
+  }, [files, versions, importMap])
 
   const resetFiles = useCallback(() => {
-    const newFiles = {
-      [APP_FILE]: appCode,
-      [INDEX_FILE]: indexCode,
-      [ANTD_FILE]: generateAntdCode(versions.antd),
-      [PACKAGE_JSON_FILE]: generatePackageJson(versions),
-    }
-    setFiles(newFiles)
-    setActiveFile(APP_FILE)
-  }, [versions])
+    setFiles({
+      [APP_FILE]: defaultCode
+    })
+  }, [])
 
   useEffect(() => {
     // Update hash in URL
@@ -119,10 +148,12 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({
   const contextValue: StoreContextType = {
     files,
     activeFile,
-    setActiveFile,
+    setActiveFile: () => {}, // 单文件模式，不需要切换
     updateFile,
     versions,
     setVersion,
+    importMap,
+    setImportMap,
     serialize,
     resetFiles,
   }
@@ -134,46 +165,11 @@ export const StoreProvider: React.FC<StoreProviderProps> = ({
   )
 }
 
-function deserialize(text: string): SerializeState {
+function deserialize(text: string): SerializeState | undefined {
   try {
     return JSON.parse(atou(text))
   } catch (error) {
     console.error('Failed to deserialize state:', error)
-    return { files: {} }
+    return undefined
   }
 }
-
-function initFiles(saved: SerializeState | undefined, versions: Versions): Record<string, string> {
-  const files: Record<string, string> = {}
-  
-  if (saved?.files && Object.keys(saved.files).length > 0) {
-    // Use saved files
-    Object.entries(saved.files).forEach(([filename, content]) => {
-      files[filename] = content
-    })
-  } else {
-    // Use default template files
-    files[APP_FILE] = appCode
-    files[INDEX_FILE] = indexCode
-    files[ANTD_FILE] = generateAntdCode(versions.antd)
-    files[PACKAGE_JSON_FILE] = generatePackageJson(versions)
-  }
-
-  return files
-}
-
-function generateAntdCode(version: string): string {
-  return antdCode.replace('#VERSION#', version)
-}
-
-function generatePackageJson(versions: Versions): string {
-  const content = JSON.parse(packageJsonCode)
-  content.dependencies = {
-    react: versions.react,
-    'react-dom': versions.react,
-    antd: versions.antd,
-    '@ant-design/icons': 'latest',
-  }
-  return JSON.stringify(content, null, 2)
-}
-

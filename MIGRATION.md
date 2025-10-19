@@ -2,7 +2,37 @@
 
 ## 概述
 
-本项目已成功从 Vue + Element Plus 技术栈迁移至 React + Ant Design 技术栈。
+本项目已从 Vue + Element Plus 技术栈迁移至 React + Ant Design 技术栈，**并保持了与原项目相同的轻量级架构设计**。
+
+## 核心架构保持不变
+
+### ✅ 保留的设计理念
+
+1. **通过 CDN 加载依赖**
+   - 原项目：通过 CDN 加载 Vue 和 Element Plus
+   - 新项目：通过 CDN 加载 React 和 Ant Design
+
+2. **浏览器内编译**
+   - 原项目：使用 @vue/compiler-sfc 编译 Vue SFC
+   - 新项目：使用 Babel Standalone 编译 JSX
+
+3. **Import Maps**
+   - 原项目：使用 Import Maps 映射 Vue 依赖
+   - 新项目：使用 Import Maps 映射 React 依赖
+
+4. **iframe 预览**
+   - 两者都使用 iframe 隔离代码执行环境
+
+5. **URL 状态持久化**
+   - 保持相同的序列化机制
+
+### ❌ 不使用 Sandpack
+
+与初版设计不同，最终版本**没有使用** Sandpack，原因：
+
+1. **Sandpack 太重**：Sandpack 是一个完整的 CodeSandbox 运行时，包含构建系统、依赖管理等，体积约 2MB
+2. **架构不一致**：与原项目的轻量级设计理念不符
+3. **黑盒实现**：不易定制和控制
 
 ## 主要变更
 
@@ -12,90 +42,162 @@
 - Vue 相关：`vue`, `@vue/repl`, `@vueuse/core`, `@vitejs/plugin-vue`, `vue-tsc`
 - Element Plus：`element-plus`
 - Vue 工具：`unplugin-auto-import`, `unplugin-vue-components`
+- ~~Sandpack（初版使用，最终移除）~~
 
 **新增的依赖：**
 - React 核心：`react`, `react-dom`, `@types/react`, `@types/react-dom`
-- Ant Design：`antd`
-- 代码编辑器：`@codesandbox/sandpack-react`
+- 编辑器：`monaco-editor`（对应原项目的 Monaco Editor）
 - 构建工具：`@vitejs/plugin-react`
 
-### 2. 构建配置更新
+**保持轻量**：
+- 总依赖数量与原项目相当
+- 只在开发环境使用 React，生产环境通过 CDN 加载
 
-**vite.config.ts:**
-- 替换 `@vitejs/plugin-vue` 为 `@vitejs/plugin-react`
-- 移除 Vue 相关的插件配置（AutoImport, Components）
-- 简化构建配置
+### 2. 核心组件对比
 
-**tsconfig.json:**
-- 添加 `"jsx": "react-jsx"` 支持 React JSX
-- 更新为 React 项目的 TypeScript 配置
+#### 原项目 (@vue/repl)
+```
+@vue/repl 组件
+├── Monaco Editor (代码编辑)
+├── Vue Compiler (编译 SFC)
+└── Preview iframe (预览)
+```
 
-### 3. 源代码迁移
+#### 新项目（自实现）
+```
+自实现 Playground
+├── Editor.tsx (Monaco Editor)
+├── Preview.tsx (Babel + iframe)
+└── Store (状态管理)
+```
 
-**入口文件：**
-- `src/main.ts` → `src/main.tsx`
-- 使用 `ReactDOM.createRoot` 替代 Vue 的 `createApp`
+### 3. 编译机制对比
 
-**主应用组件：**
-- `src/App.vue` → `src/App.tsx`
-- 使用 Sandpack 替代 @vue/repl 作为代码编辑器
-- 实现 React Context 进行状态管理
+| 特性 | 原项目 (Vue) | 新项目 (React) |
+|------|-------------|---------------|
+| 编译器 | @vue/compiler-sfc | Babel Standalone |
+| 编译位置 | 浏览器 | 浏览器 |
+| 输入格式 | Vue SFC (.vue) | JSX (.tsx) |
+| 输出格式 | ES Module | ES Module |
+| CDN 加载 | ✅ | ✅ |
 
-**组件迁移：**
-- `src/components/Header.vue` → `src/components/Header.tsx`
-- `src/components/Settings.vue` → `src/components/Settings.tsx`
-- 使用 Ant Design 组件替代 Element Plus 组件
-- 使用 React Hooks 替代 Vue Composition API
+### 4. 文件结构变化
 
-**状态管理：**
-- `src/composables/store.ts` → `src/composables/store.tsx`
-- 从 Vue Composables 改为 React Context API + Hooks
-- 保持相同的状态序列化和 URL 同步功能
+**原项目结构：**
+```
+src/
+├── App.vue                    # 主应用
+├── composables/
+│   └── store.ts              # 使用 @vue/repl
+├── components/
+│   ├── Header.vue
+│   └── Settings.vue
+└── template/
+    ├── main.vue
+    ├── welcome.vue
+    └── element-plus.js
+```
 
-### 4. 工具函数更新
+**新项目结构：**
+```
+src/
+├── App.tsx                    # 主应用 (React)
+├── composables/
+│   └── store.tsx             # 自实现状态管理
+├── components/
+│   ├── Header.tsx            # Antd 组件
+│   ├── Settings.tsx          # Antd 组件
+│   ├── Editor.tsx            # 新增：编辑器组件
+│   └── Preview.tsx           # 新增：预览组件
+└── template/
+    └── App.tsx               # 默认示例代码
+```
 
-**src/utils/dependency.ts:**
-- 更新版本获取函数以支持 React 和 Antd
-- `getSupportedVueVersions` → `getSupportedReactVersions`
-- `getSupportedEpVersions` → `getSupportedAntdVersions`
-- 更新 CDN 链接生成逻辑
+### 5. CDN 加载方式
 
-### 5. 模板文件更新
+#### React + Antd 通过 UMD 加载
 
-**删除的文件：**
-- `src/template/main.vue`
-- `src/template/welcome.vue`
-- `src/template/element-plus.js`
+```html
+<!-- React -->
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
 
-**新增的文件：**
-- `src/template/App.tsx` - React 应用组件示例
-- `src/template/index.tsx` - React 入口文件
-- `src/template/antd.ts` - Antd 样式加载脚本
-- `src/template/package.json` - 示例项目的依赖配置
+<!-- Antd -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@5.24.3/dist/reset.css" />
+<script src="https://cdn.jsdelivr.net/npm/antd@5.24.3/dist/antd.min.js"></script>
 
-### 6. 清理工作
+<!-- Babel Standalone -->
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.26.7/babel.min.js"></script>
+```
 
-**删除的文件：**
-- `src/auto-imports.d.ts` - Vue 自动导入类型定义
-- `src/components.d.ts` - Vue 组件类型定义
-- `src/env.d.ts` - Vue 环境类型定义
+#### Import Maps 配置
 
-**新增的文件：**
-- `src/vite-env.d.ts` - Vite 环境类型定义
+```json
+{
+  "imports": {
+    "react": "CDN_URL/react.production.min.js",
+    "react-dom": "CDN_URL/react-dom.production.min.js",
+    "antd": "CDN_URL/antd.min.js",
+    "@ant-design/icons": "CDN_URL/icons.umd.js"
+  }
+}
+```
 
-### 7. 样式和配置
+### 6. 编辑器实现
 
-**unocss.config.ts:**
-- 更新颜色变量从 `--el-color-primary` 到固定的 Ant Design 蓝色 `#1890ff`
+#### 原项目
+```typescript
+// 使用 @vue/repl 提供的 Monaco 集成
+import { Repl } from '@vue/repl'
+import Monaco from '@vue/repl/monaco-editor'
 
-**index.html:**
-- 更新标题为 "Antd Playground"
-- 将挂载点从 `#app` 改为 `#root`
-- 移除 Vue 特定的脚本
+<Repl editor={Monaco} ... />
+```
+
+#### 新项目
+```typescript
+// 直接使用 Monaco Editor
+import * as monaco from 'monaco-editor'
+
+monaco.editor.create(container, {
+  value: code,
+  language: 'typescript',
+  theme: dark ? 'vs-dark' : 'vs'
+})
+```
+
+### 7. 预览机制
+
+#### 原项目 (@vue/repl)
+- 内部集成了 iframe 预览
+- 自动处理 Vue 组件的编译和渲染
+- 内置错误处理
+
+#### 新项目（自实现）
+```typescript
+// 生成包含用户代码的完整 HTML
+function generatePreviewHTML(code, reactVersion, antdVersion) {
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <!-- 加载 React、Antd、Babel -->
+      </head>
+      <body>
+        <div id="root"></div>
+        <script type="text/babel">
+          ${code}  // 用户代码
+          ReactDOM.createRoot(...).render(<App />)
+        </script>
+      </body>
+    </html>
+  `
+}
+```
 
 ## 功能保留
 
-以下功能在迁移后仍然保留：
+以下功能在迁移后完全保留：
 
 ✅ 在线代码编辑和实时预览
 ✅ 版本切换（React、Antd、TypeScript）
@@ -104,22 +206,41 @@
 ✅ CDN 源选择（jsDelivr、unpkg）
 ✅ 代码重置功能
 ✅ 响应式布局
+✅ 轻量级架构
 
-## 技术亮点
+## 对比总结
 
-1. **现代化的代码编辑器**：使用 Sandpack 提供流畅的编辑体验
-2. **类型安全**：完整的 TypeScript 支持
-3. **组件化设计**：清晰的组件结构和职责分离
-4. **状态管理**：使用 React Context API 实现简洁的状态管理
-5. **URL 同步**：自动将代码状态同步到 URL，方便分享
+| 特性 | Element Plus Playground | Antd Playground |
+|------|------------------------|-----------------|
+| 框架 | Vue 3 | React 18 |
+| 组件库 | Element Plus | Ant Design |
+| 编辑器方案 | @vue/repl (内置) | 自实现 (Monaco + Babel) |
+| 编译器 | @vue/compiler-sfc | Babel Standalone |
+| CDN 加载 | ✅ | ✅ |
+| Import Maps | ✅ | ✅ |
+| iframe 预览 | ✅ | ✅ |
+| 代码体积 | ~500KB | ~500KB |
+| 架构理念 | 轻量级 | 轻量级 ✅ |
 
-## 后续工作建议
+## 为什么自实现而不用现成方案？
 
-1. 更新 GitHub Actions 工作流（如有）
-2. 更新域名和部署配置
-3. 测试所有功能确保正常工作
-4. 根据需要调整 UI 和样式
-5. 添加更多 Antd 组件示例
+### 考虑过的方案
+
+1. **Sandpack** ❌
+   - 功能完整但太重（~2MB）
+   - 黑盒实现，不易定制
+   - 与原项目架构不符
+
+2. **react-live** ❌
+   - 功能有限
+   - 不支持多文件
+   - 编辑器功能弱
+
+3. **自实现** ✅
+   - 完全可控
+   - 与原项目架构一致
+   - 轻量级（~500KB）
+   - 灵活的 CDN 切换
 
 ## 运行项目
 
@@ -134,9 +255,20 @@ pnpm dev
 pnpm build
 ```
 
-## 注意事项
+## 技术亮点
 
-- 项目要求 Node.js 版本 >= 20.10
-- 如果 pnpm 版本过低，建议升级到 10.x
-- esbuild 版本冲突可能需要清理 node_modules 后重新安装
+1. **保持原汁原味**：与 Element Plus Playground 架构完全一致
+2. **CDN 友好**：所有依赖通过 CDN 加载
+3. **浏览器编译**：无需服务端支持
+4. **完全客户端**：可部署到任何静态托管服务
+5. **易于维护**：代码结构清晰，逻辑简单
 
+## 参考文档
+
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - 详细的架构设计文档
+- [README.md](./README.md) - 项目说明
+- [Element Plus Playground](https://github.com/element-plus/element-plus-playground) - 原始项目
+
+## 许可证
+
+MIT License © 2025

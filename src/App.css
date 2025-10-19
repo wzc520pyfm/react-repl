@@ -8,20 +8,42 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.sandbox-container {
-  flex: 1;
   overflow: hidden;
 }
 
-/* Override Sandpack styles */
-.sp-layout {
-  height: 100% !important;
-  border: none !important;
+.playground-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
 }
 
-.sp-stack {
-  height: 100% !important;
+.editor-panel {
+  flex: 1;
+  min-width: 0;
+  border-right: 1px solid #e0e0e0;
 }
 
+.dark .editor-panel {
+  border-right-color: #333;
+}
+
+.preview-panel {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+}
+
+@media (max-width: 768px) {
+  .playground-container {
+    flex-direction: column;
+  }
+  
+  .editor-panel {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  
+  .dark .editor-panel {
+    border-bottom-color: #333;
+  }
+}

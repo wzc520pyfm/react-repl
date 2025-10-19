@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react'
-import { Sandpack } from '@codesandbox/sandpack-react'
-import { StoreProvider, useStore } from '@/composables/store'
+import { StoreProvider, useStore } from '@/composables/store.tsx'
 import Header from '@/components/Header.tsx'
+import Editor from '@/components/Editor.tsx'
+import Preview from '@/components/Preview.tsx'
 import './App.css'
 
 const AppContent: React.FC = () => {
   const store = useStore()
   const [loading, setLoading] = useState(true)
+  const [dark, setDark] = useState(() => {
+    const theme = new URLSearchParams(window.location.search).get('theme')
+    return theme === 'dark'
+  })
 
   useEffect(() => {
     setLoading(false)
   }, [])
 
   const handleRefresh = () => {
-    // Sandpack handles refresh internally
     window.location.reload()
+  }
+
+  const handleThemeChange = (isDark: boolean) => {
+    setDark(isDark)
   }
 
   if (loading) {
@@ -33,29 +41,28 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="app-container">
-      <Header onRefresh={handleRefresh} />
-      <div className="sandbox-container">
-        <Sandpack
-          template="react-ts"
-          files={store.files}
-          theme="auto"
-          options={{
-            showNavigator: true,
-            showTabs: true,
-            showLineNumbers: true,
-            showInlineErrors: true,
-            wrapContent: true,
-            editorHeight: 'calc(100vh - 50px)',
-          }}
-          customSetup={{
-            dependencies: {
-              react: store.versions.react,
-              'react-dom': store.versions.react,
-              antd: store.versions.antd,
-              '@ant-design/icons': 'latest',
-            },
-          }}
-        />
+      <Header 
+        onRefresh={handleRefresh} 
+        dark={dark}
+        onThemeChange={handleThemeChange}
+      />
+      <div className="playground-container">
+        <div className="editor-panel">
+          <Editor
+            value={store.files[store.activeFile] || ''}
+            onChange={(value) => store.updateFile(store.activeFile, value)}
+            language="typescript"
+            theme={dark ? 'vs-dark' : 'vs'}
+          />
+        </div>
+        <div className="preview-panel">
+          <Preview
+            code={store.files[store.activeFile] || ''}
+            reactVersion={store.versions.react}
+            antdVersion={store.versions.antd}
+            importMap={store.importMap}
+          />
+        </div>
       </div>
     </div>
   )
@@ -76,4 +83,3 @@ const App: React.FC = () => {
 }
 
 export default App
-
